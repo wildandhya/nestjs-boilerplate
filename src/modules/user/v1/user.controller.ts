@@ -9,12 +9,12 @@ import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from
 export class UserController {
     constructor(private userService: UserService){}
 
-    @Get()
-    @ApiOperation({description:"Get List User"})
-    @ApiResponse({status:200, description:"Success"})
-    @ApiResponse({status:400, description:"Bad Request"})
-    @ApiResponse({status:500, description:"Internal Server Error"})
-    async getListUser():Promise<User[]>{
-        return this.userService.FindAll()
-    }
+    // @Get()
+    // @ApiOperation({description:"Get List User"})
+    // @ApiResponse({status:200, description:"Success"})
+    // @ApiResponse({status:400, description:"Bad Request"})
+    // @ApiResponse({status:500, description:"Internal Server Error"})
+    // async getListUser():Promise<User[]>{
+    //     return this.userService.findAll()
+    // }
 }

@@ -25,22 +25,28 @@ async function bootstrap() {
 
   const documentConfig = new DocumentBuilder()
     .setOpenAPIVersion("3.0.0")
-    .setTitle("Electronic Medical Record (EMR) API")
-    .setDescription("The Documentations of Electronic Medical Record API")
+    .setTitle("NestJs Codebase")
+    .setDescription("The Documentations of API")
     .setVersion('1.0.0')
     .addBearerAuth({
       type: "http",
       scheme: "bearer",
       bearerFormat: "JWT"
     })
-    .addServer("http://localhost:3000",)
+    .addServer("http://localhost:3000", "Development Server")
     .build()
 
   const document = () => SwaggerModule.createDocument(app, documentConfig)
 
   app.use("/docs", apiReference({
     cdn: 'https://cdn.jsdelivr.net/npm/@scalar/api-reference@latest',
-    spec: { content: document }
+    spec: { 
+      content: document ,
+    },
+    metaData:{
+      title:"NestJs CodeBase"
+    },
+    hideModels:true
   }))
 
   await app.listen(process.env.PORT ?? 3000);

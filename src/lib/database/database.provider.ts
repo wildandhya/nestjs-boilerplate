@@ -1,26 +1,53 @@
-import { User } from 'src/modules/v1/user/user.entity';
-import { DataSource } from 'typeorm';
+import { Injectable, Logger } from '@nestjs/common';
+import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
+import { join } from 'path';
+import { ConfigService } from 'src/config/config.service';
 
-export const databaseProviders = [
-  {
-    provide: 'DATA_SOURCE',
-    useFactory: async () => {
-      const dataSource = new DataSource({
-        type: 'postgres',
-        host: 'ep-silent-term-a1o61k6h.ap-southeast-1.aws.neon.tech',
-        port: 5432,
-        username: 'emr_owner',
-        password: 'fmBoqlK3ch2e',
-        database: 'emr',
+const DATABASE_CONFIG = {
+  RETRY_ATTEMPTS: 10,
+  RETRY_DELAY: 3000, // milliseconds
+  AUTO_LOAD_ENTITIES: true,
+  LOGGING: "simple-console",
+} as const;
+
+
+@Injectable()
+export class DatabaseService implements TypeOrmOptionsFactory {
+  private readonly logger = new Logger(DatabaseService.name)
+
+  constructor(private configService: ConfigService) { }
+
+  createTypeOrmOptions(connectionName?: string): Promise<TypeOrmModuleOptions> | TypeOrmModuleOptions {
+    const rootPath = process.cwd()
+    try {
+      const config: TypeOrmModuleOptions = {
+        type: "postgres",
+        url: this.configService.databaseUrl,
+        synchronize: !this.configService.isProduction,
         entities: [
-            // __dirname + '../../modules/**/**/*.entity{.ts,.js}',
-            User
+          join(__dirname, '..', 'dist', 'modules', '**', '*.entity.{ts,js}'),
+          join(__dirname, '..', 'src', 'modules', '**', '*.entity.{ts,js}')
         ],
-        ssl:true
-        // synchronize: true,
-      });
+        autoLoadEntities: DATABASE_CONFIG.AUTO_LOAD_ENTITIES,
+        logger: DATABASE_CONFIG.LOGGING,
+        retryAttempts: DATABASE_CONFIG.RETRY_ATTEMPTS,
+        retryDelay: DATABASE_CONFIG.RETRY_DELAY,
+        poolSize: 20,
+        extra: {
+          max: 20,
+        },
+      }
 
-      return dataSource.initialize();
-    },
-  },
-];
+      this.logger.log(`Database configuration loaded for environment: ${this.configService.nodeEnv}`);
+      this.logger.debug(`Entity paths: ${config.entities}`);
+
+      return config
+    } catch (error) {
+      this.logger.error(
+        `Failed to create TypeORM configuration: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
+}
