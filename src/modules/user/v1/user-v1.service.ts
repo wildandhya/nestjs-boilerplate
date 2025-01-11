@@ -1,14 +1,22 @@
-import { Inject, Injectable, NotFoundException, ConflictException, InternalServerErrorException } from "@nestjs/common";
-import { Repository, FindOneOptions } from "typeorm";
-import { User } from "./user.entity";
-
-import { PaginationDto } from "src/lib/shared/dto/pagination.dto";
+import { ConflictException, Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
+import { FindOneOptions, Raw, Repository } from "typeorm";
+import { User } from "../entities/user.entity";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Filtering } from "src/lib/decorators/filtering.decorator";
+import { Pagination } from "src/lib/decorators/pagination.decorator";
+import { Sorting } from "src/lib/decorators/sorting.decorator";
+import { ApiResponse } from "src/lib/shared/dto/api-response.dto";
+import { hash } from "src/lib/shared/utils/encryption.utils";
+import { ResponseUtil } from "src/lib/shared/utils/response.utils";
+import { getOrder, getWhere } from "src/lib/shared/utils/typeorm.utils";
 import { CreateUserDto } from "./dto/create-user.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { InjectRepository } from "@nestjs/typeorm";
+import { UserClaims } from "src/lib/types";
+import { UserRole } from "src/lib/enums";
 
 @Injectable()
-export class UserService {
+export class UserV1Service {
+    private readonly logger = new Logger(UserV1Service.name)
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>
@@ -19,19 +27,23 @@ export class UserService {
      * @param paginationDto Pagination parameters
      * @returns Paginated list of users
      */
-    async findAll(paginationDto?: PaginationDto): Promise<{users: User[], total: number}> {
+    async findAll(
+        { page, size, offset }: Pagination,
+        sort?: Sorting,
+        filter?: Filtering
+    ): Promise<ApiResponse<User[]>> {
         try {
-            const { page = 1, limit = 10 } = paginationDto || {};
-            const skip = (page - 1) * limit;
-
-            const [users, total] = await this.userRepository.findAndCount({
-                skip,
-                take: limit,
-                order: { createdAt: 'DESC' }
-            });
-
-            return { users, total };
+            const where = getWhere(filter)
+            const order = getOrder(sort)
+            const [data, total] = await this.userRepository.findAndCount({
+                where,
+                order,
+                take: size,
+                skip: offset
+            })
+            return ResponseUtil.paginate(data, page, size, total)
         } catch (error) {
+            this.logger.error(error)
             throw new InternalServerErrorException('Failed to retrieve users');
         }
     }
@@ -45,8 +57,8 @@ export class UserService {
         try {
             const options: FindOneOptions<User> = {
                 where: [
-                    { email: identifier },
-                    { id: identifier }
+                    { emailHash: hash(identifier) },
+
                 ]
             };
 
@@ -58,6 +70,60 @@ export class UserService {
 
             return user;
         } catch (error) {
+            this.logger.error(error)
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException('Failed to retrieve user');
+        }
+    }
+
+    async getUserClaims(userId: string): Promise<UserClaims> {
+        try {
+            const options: FindOneOptions<User> = {
+                where: [
+                    { id: Raw(alias => `${alias} = CAST(:identifier AS uuid)`, { userId }) }
+
+                ]
+            };
+
+            const user = await this.userRepository.findOne(options);
+
+            if (!user) {
+                throw new NotFoundException(`User with userId ${userId} not found`);
+            }
+
+            return {
+                roles: [user.role as UserRole],
+                permissions:user.permissions,
+                tenantId:user.tenant_id
+            };
+        } catch (error) {
+            this.logger.error(error)
+            if (error instanceof NotFoundException) {
+                throw error;
+            }
+            throw new InternalServerErrorException('Failed to retrieve user');
+        }
+    }
+
+    async findById(identifier: string): Promise<User> {
+        try {
+            const options: FindOneOptions<User> = {
+                where: [
+                    { id: Raw(alias => `${alias} = CAST(:identifier AS uuid)`, { identifier }) }
+                ]
+            };
+
+            const user = await this.userRepository.findOne(options);
+
+            if (!user) {
+                throw new NotFoundException(`User with identifier ${identifier} not found`);
+            }
+
+            return user;
+        } catch (error) {
+            this.logger.error(error)
             if (error instanceof NotFoundException) {
                 throw error;
             }
@@ -79,7 +145,6 @@ export class UserService {
             if (existingUser) {
                 throw new ConflictException('User with this email already exists');
             }
-
             const user = this.userRepository.create({
                 ...createUserDto,
                 createdAt: new Date(),
@@ -87,6 +152,7 @@ export class UserService {
             });
             return await this.userRepository.save(user);
         } catch (error) {
+            this.logger.error(error)
             if (error instanceof ConflictException) {
                 throw error;
             }
@@ -157,31 +223,6 @@ export class UserService {
                 throw error;
             }
             throw new InternalServerErrorException('Failed to soft delete user');
-        }
-    }
-
-    /**
-     * Search users by criteria
-     * @param searchTerm Search term for name or email
-     * @param paginationDto Pagination parameters
-     * @returns Paginated list of matching users
-     */
-    async search(searchTerm: string, paginationDto?: PaginationDto): Promise<{users: User[], total: number}> {
-        try {
-            const { page = 1, limit = 10 } = paginationDto || {};
-            const skip = (page - 1) * limit;
-
-            const [users, total] = await this.userRepository.createQueryBuilder('user')
-                .where('user.name ILIKE :searchTerm OR user.email ILIKE :searchTerm', {
-                    searchTerm: `%${searchTerm}%`
-                })
-                .skip(skip)
-                .take(limit)
-                .getManyAndCount();
-
-            return { users, total };
-        } catch (error) {
-            throw new InternalServerErrorException('Failed to search users');
         }
     }
 }

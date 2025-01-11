@@ -1,14 +1,18 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UserService } from '../../user/v1/user.service';
+import { ApiResponse } from 'src/lib/shared/dto/api-response.dto';
+import { ResponseUtil } from 'src/lib/shared/utils/response.utils';
+import { UserV1Service } from '../../user/v1/user-v1.service';
 import { LoginDto } from './dto/login-request.dto';
+import { LoginResponseDto } from './dto/login-response.dto';
 import { RegisterDto } from './dto/register-request.dto';
+import { RegisterResponseDto } from './dto/register-response.dto';
 
 @Injectable()
-export class AuthService {
+export class AuthV1Service {
     constructor(
-        private readonly userService: UserService,
+        private readonly userService: UserV1Service,
         private readonly jwtService: JwtService,
     ) { }
 
@@ -17,24 +21,26 @@ export class AuthService {
      * @param registerDto Registration data
      * @returns Access token and user data
      */
-    async register(registerDto: RegisterDto) {
+    async register(registerDto: RegisterDto): Promise<ApiResponse<RegisterResponseDto>> {
         try {
             // Hash the password before storing
-            const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+            const salt = await bcrypt.genSalt()
+            const hashedPassword = await bcrypt.hash(registerDto.password, salt);
 
             // Create new user
             const user = await this.userService.create({
                 ...registerDto,
+                salt: salt,
                 password: hashedPassword,
             });
 
             // Generate JWT token
             const token = this.generateToken(user);
-
-            return {
+            const data: RegisterResponseDto = {
                 user: this.excludePassword(user),
                 access_token: token,
             };
+            return ResponseUtil.success(data)
         } catch (error) {
             if (error.message.includes('already exists')) {
                 throw new BadRequestException('User with this email already exists');
@@ -48,31 +54,35 @@ export class AuthService {
      * @param loginDto Login credentials
      * @returns Access token and user data
      */
-    async login(loginDto: LoginDto) {
-        // Find user by email
-        const user = await this.userService.findOne(loginDto.email);
+    async login(loginDto: LoginDto): Promise<ApiResponse<LoginResponseDto>> {
+        try {
+            // Find user by email
+            const user = await this.userService.findOne(loginDto.email);
 
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
+            if (!user) {
+                throw new UnauthorizedException('Invalid credentials');
+            }
+
+            // Verify password
+            const isPasswordValid = await bcrypt.compare(
+                loginDto.password,
+                user.password,
+            );
+
+            if (!isPasswordValid) {
+                throw new UnauthorizedException('Invalid credentials');
+            }
+
+            // Generate JWT token
+            const token = this.generateToken(user);
+            const data: LoginResponseDto = {
+                user: this.excludePassword(user),
+                access_token: token,
+            };
+            return ResponseUtil.success(data)
+        } catch (error) {
+            throw error;
         }
-
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(
-            loginDto.password,
-            user.password,
-        );
-
-        if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
-
-        // Generate JWT token
-        const token = this.generateToken(user);
-
-        return {
-            user: this.excludePassword(user),
-            access_token: token,
-        };
     }
 
     /**
@@ -104,7 +114,7 @@ export class AuthService {
      * @returns User without password
      */
     private excludePassword(user: any) {
-        const { password, ...userWithoutPassword } = user;
+        const { password, salt, emailHash, ...userWithoutPassword } = user;
         return userWithoutPassword;
     }
 }

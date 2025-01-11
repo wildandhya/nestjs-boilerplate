@@ -4,10 +4,10 @@ import { IsEmail, IsNotEmpty } from "class-validator";
 export class RegisterDto {
     @IsNotEmpty()
     @ApiProperty()
-    full_name: string;
+    name: string;
 
     @ApiProperty()
-    tenant_id: string;
+    tenant_id?: string;
 
     @IsEmail()
     @ApiProperty()

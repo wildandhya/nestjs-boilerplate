@@ -1,5 +1,6 @@
 export interface EnvironmentVariables {
     // Server
+    APP_NAME: string
     NODE_ENV: string;
     PORT: number;
 

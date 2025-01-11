@@ -18,7 +18,6 @@ export class DatabaseService implements TypeOrmOptionsFactory {
   constructor(private configService: ConfigService) { }
 
   createTypeOrmOptions(connectionName?: string): Promise<TypeOrmModuleOptions> | TypeOrmModuleOptions {
-    const rootPath = process.cwd()
     try {
       const config: TypeOrmModuleOptions = {
         type: "postgres",
@@ -29,7 +28,8 @@ export class DatabaseService implements TypeOrmOptionsFactory {
           join(__dirname, '..', 'src', 'modules', '**', '*.entity.{ts,js}')
         ],
         autoLoadEntities: DATABASE_CONFIG.AUTO_LOAD_ENTITIES,
-        logger: DATABASE_CONFIG.LOGGING,
+        // logger: "advanced-console",
+        logging:this.configService.isDevelopment,
         retryAttempts: DATABASE_CONFIG.RETRY_ATTEMPTS,
         retryDelay: DATABASE_CONFIG.RETRY_DELAY,
         poolSize: 20,

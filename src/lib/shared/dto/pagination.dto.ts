@@ -1,5 +1,7 @@
-
-export class PaginationDto {
-    page?: number;
-    limit?: number;
-}
+export type PaginatedResource<T> = {
+    data: T[];
+    page: number;
+    size: number;
+    totalData: number;
+    totalPage: number;
+};
