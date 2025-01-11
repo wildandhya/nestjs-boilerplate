@@ -26,10 +26,8 @@ jobs:
       - name: Build & push
         uses: docker/build-push-action@v1
         with:
-          context: .
-          file: ./directory/Dockerfile
           push: true
-          tags: wildandhya/nestjs-boilerplate:1.0.0
+          tags: wildandhya/nestjs-boilerplate:latest
 
   deploy:
     name: Deploy
