@@ -8,7 +8,7 @@ import { ConfigService } from './config.service';
   imports: [
     NestConfigModule.forRoot({
     //   isGlobal: false,
-      envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
+      envFilePath: `.env.${process.env.NODE_ENV || 'production'}`,
       validationSchema,
       validationOptions: {
         abortEarly: false, // Shows all validation errors at once
