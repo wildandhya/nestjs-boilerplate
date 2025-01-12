@@ -13,6 +13,6 @@ export const validationSchema = Joi.object({
     DATABASE_TIMEOUT: Joi.string().default('30000'),
 
     // Auth
-    JWT_PRIVATE_KEY_PATH: Joi.string().required(),
-    JWT_PUBLIC_KEY_PATH: Joi.string().required(),
+    JWT_PRIVATE_KEY_BASE64: Joi.string().required(),
+    JWT_PUBLIC_KEY_BASE64: Joi.string().required(),
 });
