@@ -41,8 +41,8 @@ Follow the steps below to set up and run the codebase on your local machine.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-repo/nestjs-codebase.git
-cd nestjs-codebase
+git clone https://github.com/wildandhya/nestjs-boilerplate.git
+cd nestjs-boilerplate
 ```
 
 2. Install dependencies:
