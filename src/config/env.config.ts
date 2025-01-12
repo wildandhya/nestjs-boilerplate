@@ -3,6 +3,7 @@ export interface EnvironmentVariables {
     APP_NAME: string
     NODE_ENV: string;
     PORT: number;
+    BASE_URL: string
 
     // Database
     DATABASE_URL: string;

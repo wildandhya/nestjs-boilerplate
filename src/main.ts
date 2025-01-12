@@ -47,7 +47,7 @@ async function bootstrap() {
       scheme: "bearer",
       bearerFormat: "JWT"
     })
-    .addServer("http://localhost:3000", "Development Server")
+    .addServer(process.env.BASE_URL, "Development Server")
     .build()
 
   const document = () => SwaggerModule.createDocument(app, documentConfig)

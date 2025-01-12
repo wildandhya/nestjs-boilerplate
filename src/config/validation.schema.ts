@@ -3,6 +3,7 @@ import * as Joi from 'joi';
 export const validationSchema = Joi.object({
     // Server
     APP_NAME: Joi.string(),
+    BASE_URL: Joi.string().required(),
     NODE_ENV: Joi.string()
         .valid('development', 'production', 'test')
         .default('development'),
