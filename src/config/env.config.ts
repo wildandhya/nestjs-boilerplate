@@ -10,7 +10,7 @@ export interface EnvironmentVariables {
     DATABASE_TIMEOUT: string;
 
     // Auth
-    JWT_PRIVATE_KEY_PATH: string;
-    JWT_PUBLIC_KEY_PATH: string
+    JWT_PRIVATE_KEY_BASE64: string;
+    JWT_PUBLIC_KEY_BASE64: string
     JWT_EXPIRATION: string;
 }

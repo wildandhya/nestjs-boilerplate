@@ -10,12 +10,12 @@ export class ConfigService {
     return this.configService.get('NODE_ENV')
   }
 
-  get privateKeyPath(): string {
-    return this.configService.get('JWT_PRIVATE_KEY_PATH')
+  get privateKey(): string {
+    return this.configService.get('JWT_PRIVATE_KEY_BASE64')
   }
 
-  get publicKeyPath(): string {
-    return this.configService.get('JWT_PUBLIC_KEY_PATH')
+  get publicKey(): string {
+    return this.configService.get('JWT_PUBLIC_KEY_BASE64')
   }
 
   get isDevelopment(): boolean {
