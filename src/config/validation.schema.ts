@@ -2,6 +2,7 @@ import * as Joi from 'joi';
 
 export const validationSchema = Joi.object({
     // Server
+    APP_NAME: Joi.string(),
     NODE_ENV: Joi.string()
         .valid('development', 'production', 'test')
         .default('development'),
@@ -15,4 +16,6 @@ export const validationSchema = Joi.object({
     // Auth
     JWT_PRIVATE_KEY_BASE64: Joi.string().required(),
     JWT_PUBLIC_KEY_BASE64: Joi.string().required(),
+
+    ENCRYPTION_KEY: Joi.string()
 });
