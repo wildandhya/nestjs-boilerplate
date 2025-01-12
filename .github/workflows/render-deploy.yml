@@ -2,8 +2,10 @@ name: Build and Deploy
 
 on:
   push:
-    branches:
-      - main
+    branches-ignore:
+      - '**'
+    # branches:
+    #   - main
 
 jobs:
   build:
