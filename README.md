@@ -23,7 +23,7 @@ This repository serves as a robust starting point for building secure and scalab
   - [ ] Kafka
 - [ ] Cache
   - [ ] Redis
-- [ ] Docker
+- [x] Docker
 
 
 ## Getting Started
